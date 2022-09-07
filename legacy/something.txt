@@ -1,0 +1,68 @@
+void Scene::Physics(float dt){
+    //VELOS
+    //DEBUG dont know if these up on the fly
+    auto velocomps = sRegistry.view<VelocityComponent>();
+    auto tobDisplaced = sRegistry.view<DisplaceComponent>();
+
+//    while (tobDisplaced.size() > 0 || velocomps.size() > 0 || i > 5) {
+        for (auto  entity : velocomps){
+            auto [t, v, d] = sRegistry.try_get<TransformComponent, VelocityComponent, DisplaceComponent>(entity);
+            //TODO: check for collisions, bounding entswCollision, noclip, etc
+            //maybe kinetic comp instead of velo? velo and acc in one?
+            if (d){
+                d->displace += v->velocity.pos;
+                t->trans.scale += v->velocity.scale;
+                d->displace += v->velocity.rotation;
+            
+            } else {
+                sRegistry.emplace<DisplaceComponent>(entity, v->velocity.pos, v->velocity.rotation.z);
+            }
+        }
+        //DISPLACE
+        //TB MEANS TO BE DISPLACED
+        //E MEANS ENVIRONMENTAL (ENTS GATHERED FROM SCENE IN SURROUNDINGS)
+    auto entswCollision = sRegistry.view<BoxComponent>();
+        for (auto  etobDisplaced : tobDisplaced){
+                    //for each ent w box component:
+                    //try get comps so loop knows who has what
+                    auto [transTB, dispTB, boxTB] = sRegistry.try_get<TransformComponent, DisplaceComponent, BoxComponent>(etobDisplaced);
+                    // see if we can check these two (if they have trans & box comps)
+                    if (transTB && boxTB){
+                        //establish collision object centered on ent to be displaced
+                        Collision coll(this, etobDisplaced);
+                        int i = 0;
+                        while (dispTB && i < 1) {
+                            for (auto entwCollision : entswCollision){
+                                if (entwCollision != etobDisplaced && coll.Check(entwCollision)){
+                                    
+                                    coll.displaceOverlap();
+                                    coll.free();
+                                    auto ename = sRegistry.get<ENameComponent>(entwCollision).ename;
+                                    auto cname = sRegistry.get<ENameComponent>(etobDisplaced).ename;
+//                                    cout << "checking if " << cname << " is free w " << ename << ", free = " << coll.isFree << endl;
+                                    
+                                    
+                                    cout << "overlapping: " << coll.isOverlap << "\npointing in: " << coll.pointingIn << endl;
+//                                    cout << "normal w " << ename << ": " << coll.normal.x << ", " << coll.normal.y << endl;
+                                    cout << "is " << cname << "pointing into " << ename << "?\nshould be: " << !coll.isFree << "\nis: " << coll.pointingIn << endl;
+                                    if (coll.isOverlap && coll.pointingIn) {
+                                        sRegistry.replace<DisplaceComponent>(etobDisplaced, coll.deflect());
+                                    }
+                                }
+                            }
+                            i++;
+//                            if (!coll.isFree) {
+//                                sRegistry.replace<DisplaceComponent>(etobDisplaced, coll.deflect());
+//                            }
+                        }
+                        if (true){
+                            transTB->trans.pos += (dispTB->displace);
+//                            cout << "in free, " << dispTB->displace.x << " , " << dispTB->displace.y << endl;
+                        }
+                    }
+                    sRegistry.remove<DisplaceComponent>(etobDisplaced);
+
+        }
+        
+    
+}
