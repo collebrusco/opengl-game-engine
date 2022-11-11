@@ -79,7 +79,7 @@ int main(int argc, const char * argv[]) {
     
     
     
-    //TODO: vsync causes mysterious fucking left mouse bug...
+    //TODO: vsync causes mysterious left mouse bug...
     glfwSwapInterval(0);
     //LOOP
     double beginTime = nanos();
